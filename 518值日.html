@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>寝室值日看板</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #0f1115;
+    color: #e6e6e6;
+    min-height: 100vh;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+  }
+  .container {
+    width: 100%;
+    max-width: 480px;
+  }
+  h1 {
+    font-size: 22px;
+    text-align: center;
+    margin-bottom: 6px;
+    color: #f0f0f0;
+  }
+  .date {
+    text-align: center;
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 24px;
+  }
+  .card {
+    background: #1a1d24;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    border: 1px solid #2a2e37;
+  }
+  .card-label {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card-name {
+    font-size: 32px;
+    font-weight: 700;
+    color: #58a6ff;
+  }
+  .card-name.toilet { color: #3fb950; }
+  .upcoming {
+    background: #1a1d24;
+    border-radius: 16px;
+    padding: 16px 20px;
+    border: 1px solid #2a2e37;
+  }
+  .upcoming-title {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 12px;
+  }
+  .day-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #23272f;
+    font-size: 14px;
+  }
+  .day-row:last-child { border-bottom: none; }
+  .day-row .d { color: #888; width: 90px; }
+  .day-row .n { color: #e6e6e6; }
+  .footer {
+    text-align: center;
+    font-size: 12px;
+    color: #555;
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🏠 寝室值日看板</h1>
+  <div class="date" id="todayDate"></div>
+
+  <div class="card">
+    <div class="card-label">🛏️ 寝室值日（2 天一轮）</div>
+    <div class="card-name" id="bedDuty">--</div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">🚽 厕所值日（7 天一轮）</div>
+    <div class="card-name toilet" id="toiletDuty">--</div>
+  </div>
+
+  <div class="upcoming">
+    <div class="upcoming-title">📅 未来 7 天预览</div>
+    <div id="upcomingList"></div>
+  </div>
+
+  <div class="footer">点开即看，自动更新</div>
+</div>
+
+<script>
+// ==================== 配置区 ====================
+const MEMBERS = ['谢江源', '陈锦慧', '俞天乐', '赵杰'];
+const START_DATE = '2026-10-20';
+// ==================================================
+
+// 计算两个日期相差的天数
+function daysBetween(startStr, targetDate) {
+  const start = new Date(startStr + 'T00:00:00');
+  const target = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+  const one = 24 * 60 * 60 * 1000;
+  return Math.floor((target - start) / one);
+}
+
+// 正确的取模
+function mod(n, m) {
+  return ((n % m) + m) % m;
+}
+
+// 根据日期算值日生
+function getDuty(date) {
+  const days = daysBetween(START_DATE, date);
+  const bedIndex = mod(Math.floor(days / 2), MEMBERS.length);
+  const toiletIndex = mod(Math.floor(days / 7), MEMBERS.length);
+  return {
+    bed: MEMBERS[bedIndex],
+    toilet: MEMBERS[toiletIndex],
+  };
+}
+
+// 格式化日期
+function formatDate(d) {
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const week = ['日','一','二','三','四','五','六'][d.getDay()];
+  return `${m}月${day}日 周${week}`;
+}
+
+// 渲染
+function render() {
+  const today = new Date();
+
+  document.getElementById('todayDate').textContent = '今天是 ' + formatDate(today);
+
+  const duty = getDuty(today);
+  document.getElementById('bedDuty').textContent = duty.bed;
+  document.getElementById('toiletDuty').textContent = duty.toilet;
+
+  const list = document.getElementById('upcomingList');
+  list.innerHTML = '';
+  for (let i = 1; i <= 7; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() + i);
+    const t = getDuty(d);
+    const row = document.createElement('div');
+    row.className = 'day-row';
+    row.innerHTML = `
+      <span class="d">${formatDate(d)}</span>
+      <span class="n">🛏️ ${t.bed} &nbsp; 🚽 ${t.toilet}</span>
+    `;
+    list.appendChild(row);
+  }
+}
+
+render();
+</script>
+</body>
+</html>
