@@ -46,12 +46,28 @@
     align-items: center;
     gap: 6px;
   }
+  
+  /* 名字和明日提示放在同一行，底部对齐 */
+  .name-wrapper {
+    display: flex;
+    align-items: flex-end; /* 底部对齐 */
+    gap: 12px;
+  }
   .card-name {
     font-size: 32px;
     font-weight: 700;
     color: #58a6ff;
+    line-height: 1; /* 压缩行高，防止把框撑大 */
   }
   .card-name.toilet { color: #3fb950; }
+  
+  /* 明日提示小字 */
+  .tomorrow-duty {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 3px; /* 微调，让文字底部对齐得更自然 */
+  }
+  
   .upcoming {
     background: #1a1d24;
     border-radius: 16px;
@@ -63,16 +79,48 @@
     color: #888;
     margin-bottom: 12px;
   }
-  .day-row {
+    .day-row {
     display: flex;
     justify-content: space-between;
-    padding: 10px 0;
+    align-items: center;
+    padding: 12px 0; /* 稍微加点上下间距让每一行更均匀 */
     border-bottom: 1px solid #23272f;
     font-size: 14px;
+    white-space: nowrap; /* 核心：强制不换行 */
   }
   .day-row:last-child { border-bottom: none; }
-  .day-row .d { color: #888; width: 90px; }
-  .day-row .n { color: #e6e6e6; }
+  .day-row .d { 
+    color: #888; 
+    width: 115px; /* 加宽一点，足够放下“10月25日 周日” */
+    flex-shrink: 0; /* 防止被右侧的名字挤压 */
+  }
+  .day-row .n { 
+    color: #e6e6e6; 
+    text-align: right; /* 右侧内容靠右对齐 */
+  }
+  
+  /* 打扫程度示例图 */
+  .clean-level {
+    margin-top: 16px;
+    background: #1a1d24;
+    border-radius: 16px;
+    padding: 16px 20px;
+    border: 1px solid #2a2e37;
+  }
+  .level-title {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 12px;
+  }
+  .level-img {
+    width: 100%;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    display: block;
+    border: 1px solid #2a2e37;
+  }
+  .level-img:last-child { margin-bottom: 0; }
+
   .footer {
     text-align: center;
     font-size: 12px;
@@ -88,17 +136,33 @@
 
   <div class="card">
     <div class="card-label">🛏️ 寝室值日（2 天一轮）</div>
-    <div class="card-name" id="bedDuty">--</div>
+    <!-- 这里把名字和小字包在一起 -->
+    <div class="name-wrapper">
+      <div class="card-name" id="bedDuty">--</div>
+      <div class="tomorrow-duty" id="bedTomorrow"></div>
+    </div>
   </div>
 
   <div class="card">
     <div class="card-label">🚽 厕所值日（7 天一轮）</div>
-    <div class="card-name toilet" id="toiletDuty">--</div>
+    <!-- 这里把名字和小字包在一起 -->
+    <div class="name-wrapper">
+      <div class="card-name toilet" id="toiletDuty">--</div>
+      <div class="tomorrow-duty" id="toiletTomorrow"></div>
+    </div>
   </div>
 
   <div class="upcoming">
     <div class="upcoming-title">📅 未来 7 天预览</div>
     <div id="upcomingList"></div>
+  </div>
+
+  <!-- 打扫程度示例图 -->
+  <div class="clean-level">
+    <div class="level-title">✨ 打扫干净程度参考</div>
+    <img src="1.jpg" alt="非常干净" class="level-img">
+    <img src="2.jpg" alt="一般干净" class="level-img">
+    <img src="3.jpg" alt="需要加油" class="level-img">
   </div>
 
   <div class="footer">点开即看，自动更新</div>
@@ -110,7 +174,6 @@ const MEMBERS = ['谢江源', '陈锦慧', '俞天乐', '赵杰'];
 const START_DATE = '2026-10-20';
 // ==================================================
 
-// 计算两个日期相差的天数
 function daysBetween(startStr, targetDate) {
   const start = new Date(startStr + 'T00:00:00');
   const target = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
@@ -118,12 +181,10 @@ function daysBetween(startStr, targetDate) {
   return Math.floor((target - start) / one);
 }
 
-// 正确的取模
 function mod(n, m) {
   return ((n % m) + m) % m;
 }
 
-// 根据日期算值日生
 function getDuty(date) {
   const days = daysBetween(START_DATE, date);
   const bedIndex = mod(Math.floor(days / 2), MEMBERS.length);
@@ -134,7 +195,6 @@ function getDuty(date) {
   };
 }
 
-// 格式化日期
 function formatDate(d) {
   const m = d.getMonth() + 1;
   const day = d.getDate();
@@ -142,26 +202,38 @@ function formatDate(d) {
   return `${m}月${day}日 周${week}`;
 }
 
-// 渲染
 function render() {
   const today = new Date();
 
   document.getElementById('todayDate').textContent = '今天是 ' + formatDate(today);
 
+  // 1. 渲染今日
   const duty = getDuty(today);
   document.getElementById('bedDuty').textContent = duty.bed;
   document.getElementById('toiletDuty').textContent = duty.toilet;
 
+  // 2. 渲染明日小字
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowDuty = getDuty(tomorrow);
+  document.getElementById('bedTomorrow').textContent = `明日：${tomorrowDuty.bed}`;
+  document.getElementById('toiletTomorrow').textContent = `明日：${tomorrowDuty.toilet}`;
+
+  // 3. 未来 7 天
   const list = document.getElementById('upcomingList');
   list.innerHTML = '';
   for (let i = 1; i <= 7; i++) {
     const d = new Date(today);
     d.setDate(d.getDate() + i);
     const t = getDuty(d);
+    
+    // 判断是不是明天，是的话显示“明日”
+    const dateStr = (i === 1) ? '明日' : formatDate(d);
+    
     const row = document.createElement('div');
     row.className = 'day-row';
     row.innerHTML = `
-      <span class="d">${formatDate(d)}</span>
+      <span class="d">${dateStr}</span>
       <span class="n">🛏️ ${t.bed} &nbsp; 🚽 ${t.toilet}</span>
     `;
     list.appendChild(row);
