@@ -171,7 +171,8 @@
 <script>
 // ==================== 配置区 ====================
 const MEMBERS = ['谢江源', '陈锦慧', '俞天乐', '赵杰'];
-const START_DATE = '2026-10-22';
+const BED_START_DATE = '2026-10-22';    // 寝室起始日
+const TOILET_START_DATE = '2026-10-20'; // 厕所起始日
 // ==================================================
 
 function daysBetween(startStr, targetDate) {
@@ -186,9 +187,14 @@ function mod(n, m) {
 }
 
 function getDuty(date) {
-  const days = daysBetween(START_DATE, date);
-  const bedIndex = mod(Math.floor(days / 2), MEMBERS.length);
-  const toiletIndex = mod(Math.floor(days / 7), MEMBERS.length);
+  // 分别计算距离各自起始日的天数
+  const bedDays = daysBetween(BED_START_DATE, date);
+  const toiletDays = daysBetween(TOILET_START_DATE, date);
+  
+  // 分别计算索引
+  const bedIndex = mod(Math.floor(bedDays / 2), MEMBERS.length);
+  const toiletIndex = mod(Math.floor(toiletDays / 7), MEMBERS.length);
+  
   return {
     bed: MEMBERS[bedIndex],
     toilet: MEMBERS[toiletIndex],
